@@ -92,12 +92,7 @@ def parse_playoff_series( playoff_table, year):
         elif round_name == "Finals":
             round_reached = 4
 
-        #determine which round was reached based on the row text
-        #round_reached = round_map[round_name]
-        #for round_name, round_num in round_map.items():
-         #   if round_name in row_text:
-                #round_reached = round_num
-                #break
+       
         for team in [winner, loser]:
             if team not in playoff_results:
                 playoff_results[team] = {
@@ -144,44 +139,7 @@ headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-#response = requests.get(url, headers=headers)
 
-#print("Status code:", response.status_code) #checking that our request was successful; should return 200
-
-#tables = pd.read_html(StringIO(response.text))
-
-#tables = get_all_tables_from_page(response.text)
-
-#print(f"Number of tables found: {len(tables)}")
-
-#for i, table in enumerate(tables):
- #   print(f"\n--- Table {i} ---")
-#    print(table.columns.tolist())
-
-# Table 8 appears to be the Miscellaneous Stats / Advanced Team Stats table.
-# We will print the first few rows to verify that it matches the website.
-#advanced_stats = find_advanced_table(tables) #this is the advanced stats table we want to scrape however in later seasons the table number changes so we neeed to update the code to include a function that will find the table to use
-
-#print("\nAdvanced stats before cleaning column names:")
-#print(advanced_stats.head())
-
-# Some of the column headers are tuples so we need to clean them to make it easier to work with. We will make this conditional however because not all columns are tuples.
-#advanced_stats.columns = [
- #   col[1] if "Unnamed" in col[0] else f"{col[0]}_{col[1]}"
-  #  for col in advanced_stats.columns
-#]
-#advanced_stats.columns = clean_columns(advanced_stats.columns)
-
-#print("\nAdvanced stats columns after cleaning:")
-#print(advanced_stats.columns.tolist())
-
-#print("\nAdvanced stats preview after cleaning:")
-#print(advanced_stats.head()) #gets the first 5 rows of the advanced stats table to verify that we have the correct data
-
-#now we know that the webscraping is working and we have the correct table, we can begin building a loop that will iterate through all the seasons and scrape the advanced stats for each season and build the table of data we want to use. 
-
-# we need to clean up some of the names in the results as well as on basketball reference an * is used to denote the playoff teams, so we will need to remove that from the team names as well.
-#advanced_stats["Team"] = advanced_stats["Team"].str.replace("*", "", regex=False)
 
 #Some NBA teams have changed names and locations so we will need to map the team names to their current 2025-2026 season names
 team_name_map = {
@@ -193,29 +151,6 @@ team_name_map = {
     "Vancouver Grizzlies": "Memphis Grizzlies"
 }
 
-#advanced_stats["Franchise"] = advanced_stats["Team"].replace(team_name_map)
-
-#now we want to get the columns we want to use for our analysis and create a new dataframe with just those columns.
-#advanced_stats = advanced_stats[
-    #[
-    #"Team",
-    #"Franchise",
-    #"W",
-    #"ORtg",
-    #"DRtg",
-    #"NRtg",
-    #"SRS",
-    #"Pace",
-    #"Offense Four Factors_eFG%",
-    #"Offense Four Factors_ORB%",
-    #"Offense Four Factors_TOV%",
-   # "Defense Four Factors_DRB%",
-  #  "Defense Four Factors_TOV%"
- #   ]
-#]
-#advanced_stats["Season"] = 2006
-
-#print(advanced_stats.head()) #making sure we have the correct columns and data before we move on to building the loop to scrape all the seasons.
 
 #begin iterating through the seasons and scraping the data for each season and appending it to a list of dataframes that we will concatenate at the end to create our final dataframe of all the advanced stats for all the seasons.
 all_seasons = [] #this table will contain advanced stats for the regular season for 2006- 2025
