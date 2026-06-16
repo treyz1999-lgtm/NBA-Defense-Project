@@ -5,7 +5,7 @@ import re
 from io import StringIO
 from bs4 import BeautifulSoup, Comment
 
-def clean_columns(columns): #this function will allow us to handle instances where our column headers are tuples and we want to clean them up to make them easier to work with. We will check if the column header is a tuple and if it is we will check if the first element of the tuple contains "Unnamed" and if it does we will use the second element of the tuple as the column name, otherwise we will concatenate the two elements of the tuple with an underscore in between to create the column name. If the column header is not a tuple we will just use it as is.
+def clean_columns(columns): # Flatten multi-level table headers into clean single-string column names
     new_columns = []
 
     for col in columns:
@@ -19,7 +19,7 @@ def clean_columns(columns): #this function will allow us to handle instances whe
     return new_columns
 
 def find_advanced_table( tables):
-    required_cols = { #we dont need all these columns but the table will contain these so we can verify that is the correct one
+    required_cols = { # Unique subset of columns used to identify the advanced stats table
         "Team",
         "W",
         "L",
@@ -59,13 +59,8 @@ def find_playoff_table (tables): #the playoff series on basketball reference are
 
 def parse_playoff_series( playoff_table, year):
     playoff_results = {}
-    round_map = {
-        "First Round" : 1,
-        "Conference Semifinals": 2,
-        "Conference Finals": 3,
-        "Finals": 4
-    }
-    for _, row in playoff_table.iterrows():
+  
+    for _, row in playoff_table.iterrows(): # Convert row into a searchable string for regex parsing
         row_text = " ".join([str(value) for value in row.tolist()])
         #print(row_text)
 
