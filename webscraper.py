@@ -5,7 +5,7 @@ import re
 from io import StringIO
 from bs4 import BeautifulSoup, Comment
 
-def clean_columns(columns): # Flatten multi-level table headers into clean single-string column names
+def clean_columns(columns):  # Flatten multi-index column headers returned by pd.read_html
     new_columns = []
 
     for col in columns:
@@ -19,7 +19,7 @@ def clean_columns(columns): # Flatten multi-level table headers into clean singl
     return new_columns
 
 def find_advanced_table( tables):
-    required_cols = { # Unique subset of columns used to identify the advanced stats table
+    required_cols = { # Identify the advanced stats table by checking for a unique set of expected columns
         "Team",
         "W",
         "L",
@@ -46,7 +46,7 @@ def find_advanced_table( tables):
         
     raise ValueError( "Advanced stats table not found")
 
-def find_playoff_table (tables): #the playoff series on basketball reference are denoted by the text X team "over" Y team, so we need to find where on the page has this sort of result
+def find_playoff_table (tables): # Playoff series rows contain text in the format: Team A "over" Team B
     for i, table in enumerate(tables):
         table = table.copy()
 
@@ -59,10 +59,9 @@ def find_playoff_table (tables): #the playoff series on basketball reference are
 
 def parse_playoff_series( playoff_table, year):
     playoff_results = {}
-  
-    for _, row in playoff_table.iterrows(): # Convert row into a searchable string for regex parsing
-        row_text = " ".join([str(value) for value in row.tolist()])
-        #print(row_text)
+
+    for _, row in playoff_table.iterrows():
+        row_text = " ".join([str(value) for value in row.tolist()]) # Convert entire row into a searchable string since playoff rows contain mixed cells and NaNs
 
         match = re.search(
             r"((?:Eastern Conference |Western Conference )?(?:First Round|Conference Semifinals|Conference Finals)|Finals)\s+(.+?)\s+over\s+(.+?)\s+\((\d+)-(\d+)\)",
@@ -104,7 +103,7 @@ def parse_playoff_series( playoff_table, year):
         playoff_results[loser]["Playoff_Wins"] += loser_wins
         playoff_results[loser]["Playoff_Losses"] += winner_wins
 
-        playoff_results[winner] ["Round_Reached"] = max(playoff_results[winner]["Round_Reached"], round_reached)
+        playoff_results[winner] ["Round_Reached"] = max(playoff_results[winner]["Round_Reached"], round_reached) #this helps us ensure that we are using the furthest round parsed so far
         playoff_results[loser] ["Round_Reached"] = max(playoff_results[loser]["Round_Reached"], round_reached)
 
         if round_reached == 4:
@@ -116,7 +115,7 @@ def parse_playoff_series( playoff_table, year):
 
 def get_all_tables_from_page(html):
     soup = BeautifulSoup(html, "html.parser")
-    comments = soup.find_all(string=lambda text: isinstance(text, Comment))
+    comments = soup.find_all(string=lambda text: isinstance(text, Comment)) # Basketball Reference hides some tables inside HTML comments. We extract and restore them so pandas can read all tables
 
     for comment in comments:
         comment_soup = BeautifulSoup(comment, "html.parser")
@@ -153,17 +152,17 @@ all_playoffs =[] #this table will contain playoff series results for 2006-2025
 
 for year in range(2006, 2026):
     url = f"https://www.basketball-reference.com/leagues/NBA_{year}.html"
-# i removed the headers from the loop because we can just set it once at the beginning of the script and it will be used for all the requests in the loop.
+
     response = requests.get(url, headers=headers)
     response.raise_for_status() #this will raise an error if the request was not successful for some reason so we can catch it and handle it instead of just getting a blank page or something like that.
     tables = get_all_tables_from_page(response.text)
     print(f"Scraping season {year}...")
     advanced_stats = find_advanced_table(tables)
-    #advanced_stats.columns = clean_columns(advanced_stats.columns) - we dont need this because the find_advanced_table function already cleans the column names for us now.
+
     advanced_stats["Team"] = advanced_stats["Team"].str.replace("*", "", regex=False)
     advanced_stats["Franchise"] = advanced_stats["Team"].replace(team_name_map)
-    advanced_stats = advanced_stats [advanced_stats["Team"] != "League Average"] #removing the league average row from the table as we dont need it for our analysis and it will just add unnecessary rows to our final dataframe.
-    advanced_stats = advanced_stats[
+    advanced_stats = advanced_stats [advanced_stats["Team"] != "League Average"] #the advanced stats table on the reference website has individual teams but also the league average. This will drop the league average from the data frame
+    advanced_stats = advanced_stats[ # Return a new DataFrame containing only these columns.
     [
     "Team",
     "Franchise",
